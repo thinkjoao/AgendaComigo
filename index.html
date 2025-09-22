@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Agendamento Profissional - Transforme sua Barbearia</title>
+<meta name="description" content="Sistema completo de agendamento online para barbearias. Organize sua agenda, aumente seus lucros e fidelize clientes. 7 dias grátis.">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+    * {margin:0;padding:0;box-sizing:border-box;}
+    body {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333;}
+    .container {max-width:1200px;margin:0 auto;padding:0 20px;}
+    .header {background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:60px 0;text-align:center;}
+    .header h1 {font-size:3rem;margin-bottom:20px;font-weight:700;}
+    .header .subtitle {font-size:1.3rem;margin-bottom:30px;opacity:.9;max-width:600px;margin:0 auto;}
+    .cta-button {background:#ff6b35;color:white;padding:18px 40px;border:none;border-radius:50px;font-size:1.2rem;font-weight:600;cursor:pointer;transition:.3s;text-decoration:none;display:inline-block;box-shadow:0 4px 15px rgba(255,107,53,.4);}
+    .cta-button:hover {background:#e55a2b;transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,107,53,.6);}
+    .trust-indicators {margin-top:40px;font-size:.9rem;opacity:.8;}
+    .benefits {padding:80px 0;background:#f8f9fa;}
+    .benefits h2 {text-align:center;font-size:2.5rem;margin-bottom:60px;color:#2c3e50;}
+    .benefits-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px;}
+    .benefit-card {background:white;padding:40px 30px;border-radius:15px;text-align:center;box-shadow:0 5px 20px rgba(0,0,0,.1);transition:.3s;}
+    .benefit-card:hover {transform:translateY(-5px);}
+    .benefit-icon {font-size:3rem;margin-bottom:20px;display:block;}
+    .benefit-card h3 {font-size:1.4rem;margin-bottom:15px;color:#2c3e50;}
+    .benefit-card p {color:#666;line-height:1.6;}
+    .social-proof {padding:80px 0;text-align:center;}
+    .social-proof h2 {font-size:2.2rem;margin-bottom:40px;color:#2c3e50;}
+    .testimonials {display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:30px;margin-top:50px;}
+    .testimonial {background:white;padding:30px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,.1);border-left:4px solid #667eea;}
+    .testimonial-text {font-style:italic;margin-bottom:20px;font-size:1.1rem;line-height:1.6;}
+    .testimonial-author {font-weight:600;color:#667eea;}
+    .pricing {padding:80px 0;background:#f8f9fa;}
+    .pricing h2 {text-align:center;font-size:2.5rem;margin-bottom:20px;color:#2c3e50;}
+    .pricing-subtitle {text-align:center;font-size:1.2rem;color:#666;margin-bottom:60px;}
+    .pricing-card {background:white;max-width:400px;margin:0 auto;border-radius:20px;padding:40px 30px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.1);border:3px solid #ff6b35;position:relative;}
+    .popular-badge {background:#ff6b35;color:white;padding:8px 20px;border-radius:20px;position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:.9rem;font-weight:600;}
+    .price {font-size:3rem;font-weight:700;color:#2c3e50;margin:20px 0;}
+    .price-period {color:#666;font-size:1rem;}
+    .price-note {color:#28a745;font-weight:600;margin-bottom:30px;}
+    .features-list {list-style:none;margin:30px 0;}
+    .features-list li {padding:10px 0;border-bottom:1px solid #eee;position:relative;padding-left:30px;}
+    .features-list li:before {content:"✓";color:#28a745;font-weight:bold;position:absolute;left:0;}
+    .faq {padding:80px 0;}
+    .faq h2 {text-align:center;font-size:2.5rem;margin-bottom:60px;color:#2c3e50;}
+    .faq-item {background:white;margin-bottom:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1);overflow:hidden;}
+    .faq-question {padding:25px 30px;background:#f8f9fa;cursor:pointer;font-weight:600;font-size:1.1rem;position:relative;border:none;width:100%;text-align:left;}
+    .faq-question:after {content:"+";position:absolute;right:30px;font-size:1.5rem;color:#667eea;}
+    .faq-question.active:after {content:"−";}
+    .faq-answer {padding:0 30px;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;}
+    .faq-answer.active {max-height:200px;padding:25px 30px;}
+    .modal {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:1000;}
+    .modal-content {position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:40px;border-radius:20px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;}
+    .modal-close {position:absolute;top:15px;right:20px;font-size:30px;cursor:pointer;color:#666;}
+    .form-group {margin-bottom:20px;}
+    .form-group label {display:block;margin-bottom:8px;font-weight:600;color:#333;}
+    .form-group input {width:100%;padding:12px 15px;border:2px solid #e1e5e9;border-radius:8px;font-size:16px;}
+    .form-group input:focus {outline:none;border-color:#667eea;}
+    #card-element {padding:12px 15px;border:2px solid #e1e5e9;border-radius:8px;background:white;}
+    .payment-summary {background:#f8f9fa;padding:20px;border-radius:10px;margin:20px 0;}
+    .error-message {color:#dc3545;font-size:14px;margin-top:5px;}
+    .success-message {color:#28a745;font-size:14px;margin-top:5px;}
+    .footer {background:#2c3e50;color:white;padding:40px 0;text-align:center;}
+    .footer-links {margin-bottom:20px;}
+    .footer-links a {color:white;text-decoration:none;margin:0 15px;}
+    .footer-links a:hover {color:#667eea;}
+    @media (max-width:768px){.header h1{font-size:2rem}.header .subtitle{font-size:1.1rem}.benefits h2,.pricing h2,.faq h2{font-size:2rem}.modal-content{padding:20px;}}
+    .loading{display:none;text-align:center;margin:20px 0;}.spinner{border:3px solid #f3f3f3;border-top:3px solid #667eea;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:0 auto;}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<section class="header">
+<div class="container">
+<h1>Transforme Sua Barbearia</h1>
+<p class="subtitle">Sistema completo de agendamento online que aumenta seus lucros em até 40% e elimina desencontros de horários</p>
+<button class="cta-button" onclick="openPaymentModal()">Começar Agora - 7 Dias Grátis</button>
+<div class="trust-indicators">
+✓ Sem taxa de setup • ✓ Cancele quando quiser • ✓ Suporte incluído
+</div>
+</div>
+</section>
+
+<!-- Benefits -->
+<section class="benefits">
+<div class="container">
+<h2>Por que Barbeiros Escolhem Nosso Sistema?</h2>
+<div class="benefits-grid">
+<div class="benefit-card"><span class="benefit-icon">📅</span><h3>Agenda Sempre Organizada</h3><p>Nunca mais perca clientes por desencontro de horários. Sistema inteligente evita conflitos automaticamente.</p></div>
+<div class="benefit-card"><span class="benefit-icon">💰</span><h3>Aumente Seus Lucros</h3><p>Clientes podem agendar 24h por dia. Reduza cancelamentos de última hora em até 60%.</p></div>
+<div class="benefit-card"><span class="benefit-icon">📱</span><h3>Acesse de Qualquer Lugar</h3><p>Funciona no celular, tablet ou computador. Gerencie sua agenda onde estiver.</p></div>
+<div class="benefit-card"><span class="benefit-icon">⏰</span><h3>Economize 2h por Dia</h3><p>Chega de ficar no WhatsApp marcando horários. Seus clientes agendam sozinhos.</p></div>
+<div class="benefit-card"><span class="benefit-icon">📊</span><h3>Relatórios Financeiros</h3><p>Saiba exatamente quanto você faturou por dia, semana e mês. Controle total do seu negócio.</p></div>
+<div class="benefit-card"><span class="benefit-icon">🔒</span><h3>Seus Dados Seguros</h3><p>Backup automático na nuvem. Nunca perca informações importantes dos seus clientes.</p></div>
+</div>
+</div>
+</section>
+
+<!-- Social Proof -->
+<section class="social-proof">
+<div class="container">
+<h2>Mais de 500 Barbeiros já Aumentaram Seus Lucros</h2>
+<div class="testimonials">
+<div class="testimonial"><p class="testimonial-text">"Depois que comecei a usar o sistema, minha agenda nunca mais ficou vazia. Os clientes podem marcar horário até de madrugada!"</p><p class="testimonial-author">— João Silva, Barbearia do João (SP)</p></div>
+<div class="testimonial"><p class="testimonial-text">"Economizo mais de 2 horas por dia que antes gastava organizando horários no WhatsApp. Agora posso focar no que importa: cortar cabelo."</p><p class="testimonial-author">— Carlos Mendes, Studio Mendes (RJ)</p></div>
+<div class="testimonial"><p class="testimonial-text">"Meu faturamento aumentou 35% em 3 meses. O sistema me ajudou a atender mais clientes sem estresse."</p><p class="testimonial-author">— Roberto Costa, Barbearia Tradicional (MG)</p></div>
+</div>
+</div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing">
+<div class="container">
+<h2>Invista no Crescimento do Seu Negócio</h2>
+<p class="pricing-subtitle">Menos que o valor de 2 cortes por mês</p>
+<div class="pricing-card">
+<div class="popular-badge">MAIS POPULAR</div>
+<div class="price">R$ 97<span class="price-period">/mês</span></div>
+<div class="price-note">7 dias grátis • Cancele quando quiser</div>
+<ul class="features-list">
+<li>Agendamento online ilimitado</li>
+<li>Agenda profissional</li>
+<li>Relatórios financeiros</li>
+<li>Backup automático na nuvem</li>
+<li>Acesso via celular e computador</li>
+<li>Suporte por WhatsApp</li>
+<li>Sem taxa de setup</li>
+</ul>
+<button class="cta-button" onclick="openPaymentModal()" style="width:100%;margin-top:20px;">Começar Período Gratuito</button>
+</div>
+</div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+<div class="container">
+<h2>Dúvidas Frequentes</h2>
+<div class="faq-item">
+<button class="faq-question" onclick="toggleFAQ(this)">Como funciona o período gratuito?</button>
+<div class="faq-answer">Você tem 7 dias para testar todas as funcionalidades sem pagar nada. Se não gostar, pode cancelar sem custo. Só cobramos após o período gratuito.</div>
+</div>
+<div class="faq-item">
+<button class="faq-question" onclick="toggleFAQ(this)">Meus clientes precisam baixar algum app?</button>
+<div class="faq-answer">Não! O sistema funciona pelo navegador. Seus clientes agendam direto pelo link que você compartilha, sem precisar instalar nada.</div>
+</div>
+<div class="faq-item">
+<button class="faq-question" onclick="toggleFAQ(this)">E se eu quiser cancelar?</button>
+<div class="faq-answer">Sem problemas! Você pode cancelar a qualquer momento pelo próprio sistema. Não há multa nem taxa de cancelamento.</div>
+</div>
+<div class="faq-item">
+<button class="faq-question" onclick="toggleFAQ(this)">Funciona no meu celular?</button>
+<div class="faq-answer">Sim! O sistema é totalmente responsivo e funciona perfeitamente em celulares, tablets e computadores. Você pode gerenciar sua agenda de qualquer lugar.</div>
+</div>
+<div class="faq-item">
+<button class="faq-question" onclick="toggleFAQ(this)">Tem suporte técnico?</button>
+<div class="faq-answer">Claro! Oferecemos suporte via WhatsApp de segunda a sexta, das 9h às 18h.</div>
+</div>
+</div>
+</section>
+
+<!-- Modal Payment -->
+<div class="modal" id="paymentModal">
+<div class="modal-content">
+<span class="modal-close" onclick="closePaymentModal()">&times;</span>
+<h2>Complete seu cadastro</h2>
+<form id="payment-form">
+<div class="form-group"><label>Nome</label><input type="text" name="name" required></div>
+<div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+<div class="form-group"><label>WhatsApp</label><input type="text" name="whatsapp" required></div>
+<div class="form-group"><label>Nome da Barbearia</label><input type="text" name="barbershop" required></div>
+<div class="form-group"><label>Dados do Cartão</label>
+<div id="card-element"></div>
+</div>
+<div class="loading" id="loading"><div class="spinner"></div></div>
+<button class="cta-button" type="submit" style="width:100%;margin-top:20px;">Finalizar Cadastro</button>
+<p class="error-message" id="error-message"></p>
+<p class="success-message" id="success-message"></p>
+</form>
+</div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+<div class="container">
+<div class="footer-links">
+<a href="#">Política de Privacidade</a> • <a href="#">Termos de Uso</a> • <a href="#">Contato</a>
+</div>
+<p>&copy; 2025 AgendaComigo. Todos os direitos reservados.</p>
+</div>
+</footer>
+
+<script>
+function toggleFAQ(button){
+button.classList.toggle('active');
+button.nextElementSibling.classList.toggle('active');
+}
+
+function openPaymentModal(){document.getElementById('paymentModal').style.display='block';}
+function closePaymentModal(){document.getElementById('paymentModal').style.display='none';document.getElementById('error-message').textContent='';document.getElementById('success-message').textContent='';}
+
+var stripe = Stripe("SUA_CHAVE_PUBLICA_AQUI");
+var elements = stripe.elements();
+var card = elements.create("card",{style:{base:{fontSize:"16px",color:"#32325d",padding:"12px 15px"}}});
+card.mount("#card-element");
+
+var form = document.getElementById("payment-form");
+form.addEventListener("submit", async function(event){
+event.preventDefault();
+document.getElementById('loading').style.display='block';
+document.getElementById('error-message').textContent='';
+document.getElementById('success-message').textContent='';
+
+var {token, error} = await stripe.createToken(card);
+if(error){document.getElementById('loading').style.display='none';document.getElementById('error-message').textContent=error.message;return;}
+
+var formData = new FormData(form);
+formData.append('stripeToken', token.id);
+
+fetch('/api/create-subscription',{
+method:'POST',
+body:formData
+}).then(res=>res.json()).then(data=>{
+document.getElementById('loading').style.display='none';
+if(data.success){document.getElementById('success-message').textContent='Cadastro realizado com sucesso!';form.reset();closePaymentModal();}
+else{document.getElementById('error-message').textContent=data.message||'Ocorreu um erro, tente novamente.';}
+}).catch(err=>{document.getElementById('loading').style.display='none';document.getElementById('error-message').textContent='Erro de conexão. Tente novamente.';});
+});
+</script>
+
+</body>
+</html>
